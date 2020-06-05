@@ -6,9 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
-	"math"
 	"os"
-	"sync"
 	"time"
 
 	"github.com/leesio/cryptopals/helpers"
@@ -81,41 +79,8 @@ func partFour() string {
 	if err := scanner.Err(); err != nil {
 		panic(err)
 	}
+	return helpers.FindSingleByteXORedStringParallel(candidates)
 
-	scores := make(chan struct {
-		score float64
-		match []byte
-	})
-
-	var wg sync.WaitGroup
-	for _, c := range candidates {
-		wg.Add(1)
-		go func(c []byte) {
-			score, b, _ := helpers.FindSingleByteXOR(c)
-			scores <- struct {
-				score float64
-				match []byte
-			}{score, b}
-			wg.Done()
-		}(c)
-	}
-	go func() {
-		wg.Wait()
-		close(scores)
-	}()
-	result := make(chan []byte)
-	go func() {
-		bestScore := math.MaxFloat64
-		var bestMatch []byte
-		for score := range scores {
-			if score.score < bestScore {
-				bestScore = score.score
-				bestMatch = score.match
-			}
-		}
-		result <- bestMatch
-	}()
-	return string(<-result)
 }
 func partFive() string {
 	s := []byte(`Burning 'em, if you ain't quick and nimble
