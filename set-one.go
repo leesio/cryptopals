@@ -2,171 +2,175 @@ package main
 
 import (
 	"bufio"
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"io/ioutil"
 	"math"
 	"os"
-	"strconv"
-	"strings"
+	"sync"
+	"time"
+
+	"github.com/leesio/cryptopals/helpers"
 )
 
-var byteFrequencyMap map[byte]float64
-
 func main() {
-	byteFrequencyMap = getByteFrequencyMap()
-	// fmt.Println("one")
-	// fmt.Println(partOne())
-	// fmt.Println("two")
-	// fmt.Println(partTwo())
-	// fmt.Println("three")
-	// fmt.Println(partThree())
-	// fmt.Println("four")
-	// fmt.Println(partFour())
-	// fmt.Println("five")
+	start := time.Now()
+
+	fmt.Println(partOne())
+	fmt.Println("one done in", time.Now().Sub(start))
+	start = time.Now()
+
+	fmt.Println(partTwo())
+	fmt.Println("two done in", time.Now().Sub(start))
+	start = time.Now()
+
+	fmt.Println(partThree())
+	fmt.Println("three done in", time.Now().Sub(start))
+	start = time.Now()
+
+	fmt.Println(partFour())
+	fmt.Println("four done in", time.Now().Sub(start))
+	start = time.Now()
+
 	// fmt.Println(partFive())
-	// fmt.Println("six")
-	fmt.Println(partSix())
+	// fmt.Println("five done in", time.Now().Sub(start))
+	// start = time.Now()
+
+	// fmt.Println(partSix())
+	// fmt.Println("six done in", time.Now().Sub(start))
 }
 
-func decrypt(s, k []byte) []byte {
-	result := make([]byte, len(s))
-	for n, b := range s {
-		result[n] = b ^ k[n%len(k)]
-	}
-	fmt.Println("decrypted result", len(result), len(s))
-	return result
-}
-
-func getKeySize(cipher []byte) int {
-	keySize := 1
-	min := 100.0
-	for k := 2; k < 41; k++ {
-		total := 0.0
-		rounds := 0
-		for n := 0; (n + 2) < len(cipher)/k; n++ {
-			a, b := cipher[n*k:(n+1)*k], cipher[(n+1)*k:(n+2)*k]
-			d := findDistance(string(a), string(b))
-			fmt.Println("k", k, "n", n, "d", d, "d", d/k)
-			total = total + float64(d)/float64(k)
-			rounds++
-		}
-		mean := total / float64(rounds)
-		if mean < min {
-			min = mean
-			keySize = k
-		}
-	}
-	return keySize
-}
-
-func findDistance(a, b string) int {
-	sum := 0
-	for n := range a {
-		a := byte(a[n])
-		b := byte(b[n])
-		// d is the XOR of the 2 things which means it's all the bits that
-		// are different.
-		// The count of the 1s in the binary representation of the byte is
-		// the distance
-		d := a ^ b
-
-		// Starting with the right most bit, calculate the bitwise AND of the
-		// byte and 1, if this equals 1, it means the right most bit is 1.
-		// Repeat for the each subsequent bit, bitshifting the 1 a single place
-		// left each time.
-		// e.g. for 1001010
-		// 1001010 & 0000001 = 0000000 so the 1st bit is *not* a 1
-		// bitshift the 1, 1 place left 1<<1 is 00000010
-		// 1001010 & 0000010 = 0000010 == 2 ^ 1 so the 1st bit *is* a 1)
-		// repeat for all 8 bits
-		for i := 0; i < 8; i++ {
-			bit := byte(1 << i)
-			if result := bit & d; result == bit {
-				sum = sum + 1
-			}
-		}
-	}
-	return sum
-}
-
-func findSingleByteXOR(s string) (float64, string, byte) {
-	b := decodeHex(s)
-	bestScore := 1000.0
-	var sentence string
-	var key byte
-	for n := 0; n < 256; n++ {
-		x := byte(n)
-		result := make([]byte, len(b))
-		for n, byt := range b {
-			result[n] = byt ^ x
-		}
-		score := scoreBytes(result)
-		if score < bestScore {
-			sentence = string(result)
-			bestScore = score
-			key = x
-		}
-	}
-
-	return bestScore, sentence, key
-}
-func getByteFrequencyMap() map[byte]float64 {
-	f, err := os.Open("frequency.txt")
+func partOne() string {
+	input := "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d"
+	b, err := hex.DecodeString(input)
 	if err != nil {
 		panic(err)
 	}
-	m := make(map[byte]float64)
+	return base64.StdEncoding.EncodeToString(b)
+}
+
+func partTwo() string {
+	a := "1c0111001f010100061a024b53535009181c"
+	b := "686974207468652062756c6c277320657965"
+	result, err := helpers.FixedXOR(
+		helpers.MustDecodeHex(a),
+		helpers.MustDecodeHex(b),
+	)
+	if err != nil {
+		panic(err)
+	}
+	return hex.EncodeToString(result)
+}
+
+func partThree() string {
+	input := "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"
+	_, r, _ := helpers.FindSingleByteXOR(helpers.MustDecodeHex(input))
+	return string(r)
+}
+func partFour() string {
+	f, err := os.Open("data/part4.txt")
+	if err != nil {
+		panic(err)
+	}
 	scanner := bufio.NewScanner(f)
+	candidates := make([][]byte, 0)
 	for scanner.Scan() {
-		parts := strings.Split(scanner.Text(), ",")
-		b, f := parts[0], parts[1]
-		by, err := strconv.Atoi(b)
-		if err != nil {
-			panic(err)
-		}
-		fre, err := strconv.ParseFloat(f, 64)
-		if err != nil {
-			panic(err)
-		}
-		m[byte(by)] = fre
+		candidates = append(candidates, helpers.MustDecodeHex(scanner.Text()))
 	}
 	if err := scanner.Err(); err != nil {
 		panic(err)
 	}
-	return m
+
+	scores := make(chan struct {
+		score float64
+		match []byte
+	})
+
+	var wg sync.WaitGroup
+	for _, c := range candidates {
+		wg.Add(1)
+		go func(c []byte) {
+			score, b, _ := helpers.FindSingleByteXOR(c)
+			scores <- struct {
+				score float64
+				match []byte
+			}{score, b}
+			wg.Done()
+		}(c)
+	}
+	go func() {
+		wg.Wait()
+		close(scores)
+	}()
+	result := make(chan []byte)
+	go func() {
+		bestScore := math.MaxFloat64
+		var bestMatch []byte
+		for score := range scores {
+			if score.score < bestScore {
+				bestScore = score.score
+				bestMatch = score.match
+			}
+		}
+		result <- bestMatch
+	}()
+	return string(<-result)
 }
-func scoreBytes(b []byte) float64 {
-	expected := make(map[byte]float64)
-	actual := make(map[byte]float64)
-	for char, pct := range byteFrequencyMap {
-		expected[char] = pct * (float64(len(b)) / 100)
-	}
-	for _, char := range b {
-		actual[char]++
-	}
-	total := 0.0
-	for char, count := range actual {
-		total = total + math.Abs(expected[char]-count)
-	}
-	return math.Sqrt(total)
+func partFive() string {
+	s := []byte(`Burning 'em, if you ain't quick and nimble
+I go crazy when I hear a cymbal`)
+	key := []byte("ICE")
+	return hex.EncodeToString(helpers.DecryptRepeatingKeyXOR(s, key))
 }
 
-func fixedXOR(a, b []byte) ([]byte, error) {
-	if len(a) != len(b) {
-		return []byte{}, fmt.Errorf("buffers not the same size")
-	}
-
-	c := make([]byte, len(a))
-	for n, byt := range a {
-		c[n] = byt ^ b[n]
-	}
-	return c, nil
-
-}
-func decodeHex(s string) []byte {
-	b, err := hex.DecodeString(s)
+func partSix() string {
+	f, err := os.Open("data/part6.txt")
 	if err != nil {
 		panic(err)
 	}
-	return b
+	// replace with decoder
+	raw, err := ioutil.ReadAll(f)
+	if err != nil {
+		panic(err)
+	}
+
+	cipher := make([]byte, 10000)
+	n, err := base64.StdEncoding.Decode(cipher, raw)
+	if err != nil {
+		panic(err)
+	}
+	cipher = cipher[:n]
+	keysize := helpers.GetKeySize(cipher)
+
+	b := make([]byte, len(cipher))
+	copy(b, cipher)
+	blocks := make([][]byte, 0)
+	for len(b) > 0 {
+		var chunk int
+		if keysize > len(b) {
+			chunk = len(b)
+		} else {
+			chunk = keysize
+		}
+		blocks = append(blocks, b[:chunk])
+		b = b[chunk:]
+	}
+
+	transposed := make([][]byte, keysize)
+	for t := range transposed {
+		transposed[t] = make([]byte, 0)
+		for _, block := range blocks {
+			if len(block) > t {
+				transposed[t] = append(transposed[t], block[t])
+			}
+		}
+	}
+
+	key := make([]byte, 0)
+	for _, block := range transposed {
+		_, _, k := helpers.FindSingleByteXOR(block)
+		key = append(key, k)
+	}
+	return string(helpers.DecryptRepeatingKeyXOR(cipher, key))
 }
