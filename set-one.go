@@ -5,38 +5,20 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
 	"os"
-	"time"
 
 	"github.com/leesio/cryptopals/helpers"
 )
 
 func main() {
-	start := time.Now()
-
-	fmt.Println(partOne())
-	fmt.Println("one done in", time.Now().Sub(start))
-	start = time.Now()
-
+	fmt.Printf(partOne())
 	fmt.Println(partTwo())
-	fmt.Println("two done in", time.Now().Sub(start))
-	start = time.Now()
-
 	fmt.Println(partThree())
-	fmt.Println("three done in", time.Now().Sub(start))
-	start = time.Now()
-
 	fmt.Println(partFour())
-	fmt.Println("four done in", time.Now().Sub(start))
-	start = time.Now()
-
-	// fmt.Println(partFive())
-	// fmt.Println("five done in", time.Now().Sub(start))
-	// start = time.Now()
-
-	// fmt.Println(partSix())
-	// fmt.Println("six done in", time.Now().Sub(start))
+	fmt.Println(partFive())
+	fmt.Println(partSix())
+	fmt.Println(partSeven())
+	fmt.Println(partEight())
 }
 
 func partOne() string {
@@ -90,22 +72,10 @@ I go crazy when I hear a cymbal`)
 }
 
 func partSix() string {
-	f, err := os.Open("data/part6.txt")
+	cipher, err := helpers.ReadAndDecodeBase64("data/part6.txt")
 	if err != nil {
 		panic(err)
 	}
-	// replace with decoder
-	raw, err := ioutil.ReadAll(f)
-	if err != nil {
-		panic(err)
-	}
-
-	cipher := make([]byte, 10000)
-	n, err := base64.StdEncoding.Decode(cipher, raw)
-	if err != nil {
-		panic(err)
-	}
-	cipher = cipher[:n]
 	keysize := helpers.GetKeySize(cipher)
 
 	b := make([]byte, len(cipher))
@@ -138,4 +108,34 @@ func partSix() string {
 		key = append(key, k)
 	}
 	return string(helpers.DecryptRepeatingKeyXOR(cipher, key))
+}
+func partSeven() string {
+	cipher, err := helpers.ReadAndDecodeBase64("data/part7.txt")
+	if err != nil {
+		panic(err)
+	}
+	r := helpers.DecryptAES128ECB(cipher, []byte("YELLOW SUBMARINE"))
+	return string(r)
+}
+
+func partEight() string {
+	f, err := os.Open("data/part8.txt")
+	if err != nil {
+		panic(err)
+	}
+	scanner := bufio.NewScanner(f)
+
+	max := 0
+	bestMatch := []byte{}
+	for scanner.Scan() {
+		b := scanner.Bytes()
+		if n := helpers.FindRepeatingBlocks(b); n > max {
+			max = n
+			bestMatch = b
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		panic(err)
+	}
+	return hex.EncodeToString(bestMatch)
 }

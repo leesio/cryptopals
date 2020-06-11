@@ -2,8 +2,10 @@ package helpers
 
 import (
 	"bufio"
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"io/ioutil"
 	"math"
 	"os"
 	"strconv"
@@ -205,4 +207,17 @@ func FindSingleByteXORedStringParallel(candidates [][]byte) string {
 		result <- bestMatch
 	}()
 	return string(<-result)
+}
+
+func ReadAndDecodeBase64(filename string) ([]byte, error) {
+	f, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	decoder := base64.NewDecoder(base64.StdEncoding, f)
+	cipher, err := ioutil.ReadAll(decoder)
+	if err != nil {
+		return nil, err
+	}
+	return cipher, nil
 }
