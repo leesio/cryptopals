@@ -1,27 +1,15 @@
-package main
+package setone
 
 import (
 	"bufio"
 	"encoding/base64"
 	"encoding/hex"
-	"fmt"
 	"os"
 
 	"github.com/leesio/cryptopals/helpers"
 )
 
-func main() {
-	fmt.Printf(partOne())
-	fmt.Println(partTwo())
-	fmt.Println(partThree())
-	fmt.Println(partFour())
-	fmt.Println(partFive())
-	fmt.Println(partSix())
-	fmt.Println(partSeven())
-	fmt.Println(partEight())
-}
-
-func partOne() string {
+func PartOne() string {
 	input := "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d"
 	b, err := hex.DecodeString(input)
 	if err != nil {
@@ -30,7 +18,7 @@ func partOne() string {
 	return base64.StdEncoding.EncodeToString(b)
 }
 
-func partTwo() string {
+func PartTwo() string {
 	a := "1c0111001f010100061a024b53535009181c"
 	b := "686974207468652062756c6c277320657965"
 	result, err := helpers.FixedXOR(
@@ -43,12 +31,12 @@ func partTwo() string {
 	return hex.EncodeToString(result)
 }
 
-func partThree() string {
+func PartThree() string {
 	input := "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"
 	_, r, _ := helpers.FindSingleByteXOR(helpers.MustDecodeHex(input))
 	return string(r)
 }
-func partFour() string {
+func PartFour() string {
 	f, err := os.Open("data/part4.txt")
 	if err != nil {
 		panic(err)
@@ -64,14 +52,14 @@ func partFour() string {
 	return helpers.FindSingleByteXORedStringParallel(candidates)
 
 }
-func partFive() string {
+func PartFive() string {
 	s := []byte(`Burning 'em, if you ain't quick and nimble
 I go crazy when I hear a cymbal`)
 	key := []byte("ICE")
 	return hex.EncodeToString(helpers.DecryptRepeatingKeyXOR(s, key))
 }
 
-func partSix() string {
+func PartSix() string {
 	cipher, err := helpers.ReadAndDecodeBase64("data/part6.txt")
 	if err != nil {
 		panic(err)
@@ -109,7 +97,7 @@ func partSix() string {
 	}
 	return string(helpers.DecryptRepeatingKeyXOR(cipher, key))
 }
-func partSeven() string {
+func PartSeven() string {
 	cipher, err := helpers.ReadAndDecodeBase64("data/part7.txt")
 	if err != nil {
 		panic(err)
@@ -118,7 +106,7 @@ func partSeven() string {
 	return string(r)
 }
 
-func partEight() string {
+func PartEight() string {
 	f, err := os.Open("data/part8.txt")
 	if err != nil {
 		panic(err)
